@@ -6,6 +6,21 @@ In a nut-shell, it provides a variant of an Angular Scope that can be used to
 enscapsulate the interface of your service, much like Scope encapsulates the
 interface between controllers and templates.
 
+**Table of Contents**
+
+- [Usage and API](#usage-and-api)
+	- [Initialisation](#initialisation)
+	- [$attach($scope, name)](#$attach$scope-name)
+	- [$attachProperty(property, $scope, name)](#$attachpropertyproperty-$scope-name)
+	- [$update(property, value)](#$updateproperty-value)
+	- [$defer(name)](#$defername)
+	- [$get(name)](#$getname)
+- [Background: what problem does this solve?](#background-what-problem-does-this-solve?)
+	- [Problem: propagating data changes without triggering all the watchers on the page](#problem-propagating-data-changes-without-triggering-all-the-watchers-on-the-page)
+	- [Problem: notifying services of data changes](#problem-notifying-services-of-data-changes)
+	- [Problem: updating data that was delivered with a promise](#problem-updating-data-that-was-delivered-with-a-promise)
+	- [Problem: composing services with granularity](#problem-composing-services-with-granularity)
+
 ## Usage and API
 
 Import the JS file and add serviceScope as a module dependency to your module. Within each service that you want to use it in, import $serviceScope.
@@ -317,8 +332,5 @@ angular.module('todo').factory('todo', function($serviceScope, mongo, authentica
 });
 ```
 
-
-
-## Usage
 
 
