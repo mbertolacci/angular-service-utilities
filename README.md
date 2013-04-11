@@ -13,7 +13,7 @@ interface between controllers and templates.
 - [Usage and API](#usage-and-api)
 	- [Initialisation](#initialisation)
 	- [$attach($scope, name)](#attachscope-name)
-	- [$attachProperty(property, $scope, name)](#attachpropertyproperty-$scope-name)
+	- [$attachProperty(property, $scope, name)](#attachpropertyproperty-scope-name)
 	- [$update(property, value)](#updateproperty-value)
 	- [$defer(name)](#defername)
 	- [$get(name)](#getname)
