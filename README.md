@@ -6,6 +6,8 @@ In a nut-shell, it provides a variant of an Angular Scope that can be used to
 enscapsulate the interface of your service, much like Scope encapsulates the
 interface between controllers and templates.
 
+*More examples coming soon...*
+
 **Table of Contents**
 
 - [Usage and API](#usage-and-api)
