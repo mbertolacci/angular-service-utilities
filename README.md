@@ -112,8 +112,8 @@ angular.module('todo').factory('toDoList', function($serviceScope) {
 
     $http('...').then(function(result) {
     	// result = {
-    	//	 name: 'Johnathan',
-    	//   todos: ['Write Gulliver's Travels', 'Eat breakfast', 'Write another essay']
+    	//	 name: 'Johnathan Swift',
+    	//   todos: ['Write Gulliver\'s Travels', 'Eat breakfast', 'Write another essay']
     	// }
 
     	// $scope.user will now contain the updates value, but
