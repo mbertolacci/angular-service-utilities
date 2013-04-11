@@ -107,7 +107,7 @@ angular.module('todo').factory('toDoList', function($serviceScope) {
 
 	$scope.user = {
 		name: 'Johnathan',
-		todos: ['Write Gulliver's Travels', 'Eat breakfast']
+		todos: ['Write Gulliver\'s Travels', 'Eat breakfast']
 	};
 
     $http('...').then(function(result) {
