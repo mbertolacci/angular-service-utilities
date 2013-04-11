@@ -106,17 +106,17 @@ angular.module('todo').factory('toDoList', function($serviceScope) {
 	var $scope = $serviceScope();
 
 	$scope.user = {
-		name: 'Johnathan',
+		name: 'Jonathan',
 		todos: ['Write Gulliver\'s Travels', 'Eat breakfast']
 	};
 
     $http('...').then(function(result) {
     	// result = {
-    	//	 name: 'Johnathan Swift',
+    	//	 name: 'Jonathan Swift',
     	//   todos: ['Write Gulliver\'s Travels', 'Eat breakfast', 'Write another essay']
     	// }
 
-    	// $scope.user will now contain the updates value, but
+    	// $scope.user will now contain the updated values, but
     	// it won't be an entirely new object, and neither will
     	// $scope.user.todos
     	$scope.$update('user', result);
