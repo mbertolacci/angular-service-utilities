@@ -6,6 +6,11 @@ In a nut-shell, it provides a variant of an Angular Scope that can be used to
 enscapsulate the interface of your service, much like Scope encapsulates the
 interface between controllers and templates.
 
+This is done in two ways:
+
+1. Allow composition of scopes instead of just inheritance
+2. Provide a way to use promises without losing two-way data binding
+
 *More examples coming soon...*
 
 **Table of Contents**
