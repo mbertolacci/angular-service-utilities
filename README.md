@@ -1,5 +1,7 @@
 # serviceScope
 
+*Note: I've realised this can really be two separate modules, a $compose module that lets you compose two scopes with two-way data binding, and the $get and $defer style style. I'll probably refactor shortly.*
+
 serviceScope is an AngularJS utility for bringing two-way data binding into services.
 
 In a nut-shell, it provides a variant of an Angular Scope that can be used to
