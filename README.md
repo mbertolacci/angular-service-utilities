@@ -1,4 +1,4 @@
-# Service utilities
+# AngularJS service utilities
 
 This is an AngularJS module containing utilities to help you create composable, reusable and
 maintainable AngularJS services.
