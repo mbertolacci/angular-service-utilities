@@ -15,7 +15,7 @@ Exports
   var debounce, digestOnceOnNextTick, mergeObject, qFactory,
     __slice = [].slice;
 
-  angular.module('serviceScope', []).factory('$compose', [
+  angular.module('serviceUtilities', []).factory('$compose', [
     function() {
       var exports;
       return exports = {
@@ -69,7 +69,7 @@ Exports
   */
 
 
-  angular.module('serviceScope').factory('$serviceScope', [
+  angular.module('serviceUtilities').factory('$serviceScope', [
     '$rootScope', '$serviceQ', '$compose', function($rootScope, $serviceQ, $compose) {
       return function() {
         var $serviceScope, promises;
@@ -105,7 +105,7 @@ Exports
     }
   ]);
 
-  angular.module('serviceScope').factory('$serviceQ', [
+  angular.module('serviceUtilities').factory('$serviceQ', [
     '$exceptionHandler', function($exceptionHandler) {
       return qFactory(function(callback) {
         return setTimeout(callback, 0);

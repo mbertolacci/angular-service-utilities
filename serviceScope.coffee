@@ -8,7 +8,7 @@ Exports
   composeProperty($srcScope, property, $dstScope, name):
   	Sets $dstScope[name] = $srcScope[property] and sets up two-way data binding.
 ###
-angular.module('serviceScope', []).factory '$compose', [() ->
+angular.module('serviceUtilities', []).factory '$compose', [() ->
 	exports =
 		compose: ($srcScope, $dstScope, name) ->
 			removeTheirWatcher = $dstScope.$watch name, (newValue, oldValue) ->
@@ -61,7 +61,7 @@ angular.module('serviceScope', []).factory '$compose', [() ->
 ###
 Exports a factory function returning a service scope.
 ###
-angular.module('serviceScope').factory '$serviceScope', ['$rootScope', '$serviceQ', '$compose', ($rootScope, $serviceQ, $compose) ->
+angular.module('serviceUtilities').factory '$serviceScope', ['$rootScope', '$serviceQ', '$compose', ($rootScope, $serviceQ, $compose) ->
 	() ->
 		$serviceScope = $rootScope.$new(true)
 
@@ -98,7 +98,7 @@ angular.module('serviceScope').factory '$serviceScope', ['$rootScope', '$service
 		return $serviceScope
 ]
 
-angular.module('serviceScope').factory '$serviceQ', ['$exceptionHandler', ($exceptionHandler) ->
+angular.module('serviceUtilities').factory '$serviceQ', ['$exceptionHandler', ($exceptionHandler) ->
 	return qFactory (callback) ->
 		setTimeout callback, 0
 	, $exceptionHandler
