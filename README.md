@@ -192,7 +192,7 @@ If you have an application that, for instance, synchronises the state of the app
 The problem is that in Angular there are only two ways to notify a service of a change:
 
  - Call $rootScope.$watch without a property name so every digest triggers a listener; this might have negative performance considerations
- - Create a function on the service that the controller should call when anything changes. But this kind of boilerplate is the reason so many of us switches to Angular from Backbone (or whatever) in the first place.
+ - Create a function on the service that the controller should call when anything changes. But this kind of boilerplate is the reason so many of us switch to Angular from Backbone (or whatever) in the first place.
 
 **With $serviceScope, the service itself can set a $watch function on one of its properties.**
 
