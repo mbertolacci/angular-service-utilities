@@ -1,3 +1,109 @@
+
+###
+Exports
+
+  compose($srcScope, $dstScope, name): 
+    Sets $dstScope[name] = $srcScope and sets up two-way data binding.
+
+  composeProperty($srcScope, property, $dstScope, name):
+  	Sets $dstScope[name] = $srcScope[property] and sets up two-way data binding.
+###
+angular.module('serviceScope', []).factory '$compose', [() ->
+	exports =
+		compose: ($srcScope, $dstScope, name) ->
+			removeTheirWatcher = $dstScope.$watch name, (newValue, oldValue) ->
+				if newValue != oldValue
+					# The user has destroyed the reference!
+					throw Error('$dstScope was detached from scope')
+					removeWatchers()
+				else
+					# A change occured; pass it on
+					digestOnceOnNextTick $dstScope
+
+			removeOurWatcher = $dstScope.$watch () ->
+				digestOnceOnNextTick $dstScope
+
+			removeWatchers = () ->
+				removeTheirWatcher()
+				removeOurWatcher()
+
+			$srcScope.$on '$destroy', removeWatchers
+			$dstScope.$on '$destroy', removeWatchers
+
+			$dstScope[name] = $dstScope
+
+			# Chain API
+			return exports
+
+		composeProperty: ($srcScope, property, $dstScope, name) ->
+			removeTheirWatcher = $dstScope.$watch name, () ->
+				$srcScope[property] = mergeObject $dstScope[name], $srcScope[property]
+				digestOnceOnNextTick $srcScope
+
+			removeOurWatcher = $srcScope.$watch property, () ->
+				$dstScope[name] = mergeObject $srcScope[property], $dstScope[name]
+				digestOnceOnNextTick $dstScope
+
+			removeWatchers = () ->
+				removeTheirWatcher()
+				removeOurWatcher()
+
+			$srcScope.$on '$destroy', removeWatchers
+			$dstScope.$on '$destroy', removeWatchers
+
+			$dstScope[name] = $srcScope[property]
+
+			# Chain API
+			return exports
+
+]
+
+###
+Exports a factory function returning a service scope.
+###
+angular.module('serviceScope').factory '$serviceScope', ['$rootScope', '$serviceQ', '$compose', ($rootScope, $serviceQ, $compose) ->
+	() ->
+		$serviceScope = $rootScope.$new(true)
+
+		promises = {}
+
+		$serviceScope.$get = (name) ->
+			return promises[name].then () ->
+				# Ensure that the promise always gives the most up to date
+				# data
+				return $serviceScope[name]
+
+		$serviceScope.$defer = (name) ->
+			# Not a promise; just send it through
+			deferred = $serviceQ.defer()
+
+			promises[name] = deferred.promise.then (actualValue) ->
+				$serviceScope[name] = actualValue
+				digestOnceOnNextTick $serviceScope
+
+			return deferred
+
+		$serviceScope.$update = (name, value) ->
+			$serviceScope[name] = mergeObject value, $serviceScope[name]
+
+		# Convenience methods to connect to the $compose modulke
+		$serviceScope.$attachProperty = (property, $scope, name) ->
+			$compose.composeProperty $serviceScope, property, $scope, name
+			return $serviceScope
+
+		$serviceScope.$attach = ($scope, name) ->
+			$compose.compose $serviceScope, $scope, name
+			return $serviceScope
+
+		return $serviceScope
+]
+
+angular.module('serviceScope').factory '$serviceQ', ['$exceptionHandler', ($exceptionHandler) ->
+	return qFactory (callback) ->
+		setTimeout callback, 0
+	, $exceptionHandler
+]
+
 # Utility function that ensures that multiple calls to a function
 # within a single execution context will result in just one call
 # on the next tick
@@ -60,84 +166,222 @@ digestOnceOnNextTick = ($scope) ->
 
 	$scope.$$digestOnceOnNextTick()
 
-angular.module('serviceScope').factory '$serviceScope', ['$rootScope', '$q', ($rootScope, $q) ->
-	() ->
-		$serviceScope = $rootScope.$new(true)
 
-		promises = {}
+###
+The following code is copied from AngularJS in order to get promises that
+don't trigger $rootScope.$digest on being resolved
 
-		$serviceScope.$get = (name) ->
-			return promises[name].then () ->
-				# Ensure that the promise always gives the most up to date
-				# data
-				return $serviceScope[name]
+(c) 2010-2012 Google, Inc. http://angularjs.org
+License: MIT
 
-		$serviceScope.$defer = (name) ->
-			# Not a promise; just send it through
-			deferred = $q.defer()
+Constructs a promise manager.
 
-			promises[name] = deferred.promise.then (actualValue) ->
-				$serviceScope[name] = actualValue
-				digestOnceOnNextTick $serviceScope
+@param {function(function)} nextTick Function for executing functions in the next turn.
+@param {function(...*)} exceptionHandler Function into which unexpected exceptions are passed for
+debugging purposes.
+@returns {object} Promise manager.
+###
+qFactory = (nextTick, exceptionHandler) ->
+  
+  ###
+  @ngdoc
+  @name ng.$q#defer
+  @methodOf ng.$q
+  @description
+  Creates a `Deferred` object which represents a task which will finish in the future.
+  
+  @returns {Deferred} Returns a new instance of deferred.
+  ###
+  
+  ###
+  @ngdoc
+  @name ng.$q#reject
+  @methodOf ng.$q
+  @description
+  Creates a promise that is resolved as rejected with the specified `reason`. This api should be
+  used to forward rejection in a chain of promises. If you are dealing with the last promise in
+  a promise chain, you don't need to worry about it.
+  
+  When comparing deferreds/promises to the familiar behavior of try/catch/throw, think of
+  `reject` as the `throw` keyword in JavaScript. This also means that if you "catch" an error via
+  a promise error callback and you want to forward the error to the promise derived from the
+  current promise, you have to "rethrow" the error by returning a rejection constructed via
+  `reject`.
+  
+  <pre>
+  promiseB = promiseA.then(function(result) {
+  // success: do something and resolve promiseB
+  //          with the old or a new result
+  return result;
+  }, function(reason) {
+  // error: handle the error if possible and
+  //        resolve promiseB with newPromiseOrValue,
+  //        otherwise forward the rejection to promiseB
+  if (canHandle(reason)) {
+  // handle the error and recover
+  return newPromiseOrValue;
+  }
+  return $q.reject(reason);
+  });
+  </pre>
+  
+  @param {*} reason Constant, message, exception or an object representing the rejection reason.
+  @returns {Promise} Returns a promise that was already resolved as rejected with the `reason`.
+  ###
+  
+  ###
+  @ngdoc
+  @name ng.$q#when
+  @methodOf ng.$q
+  @description
+  Wraps an object that might be a value or a (3rd party) then-able promise into a $q promise.
+  This is useful when you are dealing with an object that might or might not be a promise, or if
+  the promise comes from a source that can't be trusted.
+  
+  @param {*} value Value or a promise
+  @returns {Promise} Returns a single promise that will be resolved with an array of values,
+  each value corresponding to the promise at the same index in the `promises` array. If any of
+  the promises is resolved with a rejection, this resulting promise will be resolved with the
+  same rejection.
+  ###
+  defaultCallback = (value) ->
+    value
+  defaultErrback = (reason) ->
+    reject reason
+  
+  ###
+  @ngdoc
+  @name ng.$q#all
+  @methodOf ng.$q
+  @description
+  Combines multiple promises into a single promise that is resolved when all of the input
+  promises are resolved.
+  
+  @param {Array.<Promise>} promises An array of promises.
+  @returns {Promise} Returns a single promise that will be resolved with an array of values,
+  each value corresponding to the promise at the same index in the `promises` array. If any of
+  the promises is resolved with a rejection, this resulting promise will be resolved with the
+  same rejection.
+  ###
+  all = (promises) ->
+    deferred = defer()
+    counter = promises.length
+    results = []
+    if counter
+      angular.forEach promises, (promise, index) ->
+        ref(promise).then ((value) ->
+          return  if index of results
+          results[index] = value
+          deferred.resolve results  unless --counter
+        ), (reason) ->
+          return  if index of results
+          deferred.reject reason
 
-			return deferred
 
-		$serviceScope.$update = (name, value) ->
-			$serviceScope[name] = mergeObject value, $serviceScope[name]
+    else
+      deferred.resolve results
+    deferred.promise
+  defer = ->
+    pending = []
+    value = undefined
+    deferred = undefined
+    deferred =
+      resolve: (val) ->
+        if pending
+          callbacks = pending
+          pending = `undefined`
+          value = ref(val)
+          if callbacks.length
+            nextTick ->
+              callback = undefined
+              i = 0
+              ii = callbacks.length
 
-		removeWatcherFunctions = []
+              while i < ii
+                callback = callbacks[i]
+                value.then callback[0], callback[1]
+                i++
 
-		$serviceScope.$attachProperty = (property) ->
-			return {
-				to: ($scope, name) ->
-					removeTheirWatcher = $scope.$watch name, () ->
-						$serviceScope[property] = mergeObject $scope[name], $serviceScope[property]
-						digestOnceOnNextTick $serviceScope
 
-					removeOurWatcher = $serviceScope.$watch property, () ->
-						$scope[name] = mergeObject $serviceScope[property], $scope[name]
-						digestOnceOnNextTick $scope
+      reject: (reason) ->
+        deferred.resolve reject(reason)
 
-					removeWatchers = () ->
-						removeTheirWatcher()
-						removeOurWatcher()
-						removeWatcherFunctions.splice(removeWatcherFunctions.indexOf removeWatchers, 1)
+      promise:
+        then: (callback, errback) ->
+          result = defer()
+          wrappedCallback = (value) ->
+            try
+              result.resolve (callback or defaultCallback)(value)
+            catch e
+              exceptionHandler e
+              result.reject e
 
-					$scope.$on '$destroy', removeWatchers
-					removeWatcherFunctions.push removeWatchers
+          wrappedErrback = (reason) ->
+            try
+              result.resolve (errback or defaultErrback)(reason)
+            catch e
+              exceptionHandler e
+              result.reject e
 
-					$scope[name] = $serviceScope[property]
-					return $scope[name]
-			}
+          if pending
+            pending.push [wrappedCallback, wrappedErrback]
+          else
+            value.then wrappedCallback, wrappedErrback
+          result.promise
 
-		$serviceScope.$attach = ($scope, name) ->
-			removeTheirWatcher = $scope.$watch name, (newValue, oldValue) ->
-				if newValue != oldValue
-					# The user has destroyed the reference!
-					throw Error('$serviceScope was detached from scope')
-					removeWatchers()
-				else
-					# A change occured; pass it on
-					digestOnceOnNextTick $serviceScope
+    deferred
 
-			removeOurWatcher = $serviceScope.$watch () ->
-				digestOnceOnNextTick $scope
+  ref = (value) ->
+    return value  if value and value.then
+    then: (callback) ->
+      result = defer()
+      nextTick ->
+        result.resolve callback(value)
 
-			removeWatchers = () ->
-				removeTheirWatcher()
-				removeOurWatcher()
-				removeWatcherFunctions.splice(removeWatcherFunctions.indexOf removeWatchers, 1)
+      result.promise
 
-			$scope.$on '$destroy', removeWatchers
-			removeWatcherFunctions.push removeWatchers
+  reject = (reason) ->
+    then: (callback, errback) ->
+      result = defer()
+      nextTick ->
+        result.resolve (errback or defaultErrback)(reason)
 
-			$scope[name] = $serviceScope
+      result.promise
 
-			return $serviceScope
+  when_ = (value, callback, errback) ->
+    result = defer()
+    done = undefined
+    wrappedCallback = (value) ->
+      try
+        return (callback or defaultCallback)(value)
+      catch e
+        exceptionHandler e
+        return reject(e)
 
-		$serviceScope.$on '$destroy', () ->
-			angular.forEach removeWatcherFunctions, (removeWatchers) ->
-				removeWatchers()
+    wrappedErrback = (reason) ->
+      try
+        return (errback or defaultErrback)(reason)
+      catch e
+        exceptionHandler e
+        return reject(e)
 
-		return $serviceScope
-]
+    nextTick ->
+      ref(value).then ((value) ->
+        return  if done
+        done = true
+        result.resolve ref(value).then(wrappedCallback, wrappedErrback)
+      ), (reason) ->
+        return  if done
+        done = true
+        result.resolve wrappedErrback(reason)
+
+
+    result.promise
+
+  defer: defer
+  reject: reject
+  when: when_
+  all: all
+
+
+

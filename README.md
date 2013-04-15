@@ -1,38 +1,64 @@
-# serviceScope
+# Service utilities
 
-*Note: I've realised this can really be two separate modules, a $compose module that lets you compose two scopes with two-way data binding, and the $get and $defer style style. I'll probably refactor shortly.*
+This is an AngularJS module containing utilities to help you create composable, reusable and
+maintainable AngularJS services.
 
-serviceScope is an AngularJS utility for bringing two-way data binding into services.
+It provides:
 
-In a nut-shell, it provides a variant of an Angular Scope that can be used to
-enscapsulate the interface of your service, much like Scope encapsulates the
-interface between controllers and templates.
-
-This is done in two ways:
-
-1. Allow composition of scopes instead of just inheritance
-2. Provide a way to use promises without losing two-way data binding
-
-*More examples coming soon...*
+- A service able to compose a scope below a property in another scope, preserving two-way data binding
+- A variant of an Angular Scope that can be used to enscapsulate the interface of your service, much like Scope encapsulates the interface between controllers and templates.
+- A promise implementation identical to Angular's $q, except resolving these deferreds do not trigger a root digest.
 
 **Table of Contents**
 
 - [Usage and API](#usage-and-api)
-	- [Initialisation](#initialisation)
-	- [$attach($scope, name)](#attachscope-name)
-	- [$attachProperty(property, $scope, name)](#attachpropertyproperty-scope-name)
-	- [$update(property, value)](#updateproperty-value)
-	- [$defer(name)](#defername)
-	- [$get(name)](#getname)
+	- [$compose](#compose)
+		- [Importing](#importing)
+		- [compose($srcScope, $dstScope, name)](#composesrcscope-dstscope-name)
+		- [composeProperty($srcScope, property, $dstScope, name)](#composepropertysrcscope-property-dstscope-name)
+	- [$serviceScope](#servicescope)
+		- [Initialisation](#initialisation)
+		- [$defer(name)](#defername)
+		- [$get(name)](#getname)
+		- [$update(property, value)](#updateproperty-value)
+		- [$attach($scope, name)](#attachscope-name)
+		- [$attachProperty(property, $scope, name)](#attachpropertyproperty-scope-name)
+	- [$serviceQ](#serviceq)
 - [Background: what problem does this solve?](#background-what-problem-does-this-solve)
 	- [Problem: propagating data changes without triggering all the watchers on the page](#problem-propagating-data-changes-without-triggering-all-the-watchers-on-the-page)
 	- [Problem: notifying services of data changes](#problem-notifying-services-of-data-changes)
 	- [Problem: updating data that was delivered with a promise](#problem-updating-data-that-was-delivered-with-a-promise)
 	- [Problem: composing services with granularity](#problem-composing-services-with-granularity)
 
-## Usage and API
+# Usage and API
 
 Import the JS file and add serviceScope as a module dependency to your module. Within each service that you want to use it in, import $serviceScope.
+
+## $compose
+
+### Importing
+
+Just list the service as a dependency:
+
+```javascript
+angular.module('example').factory('exampleService', function($compose) {
+	// Compose some scopes, yo
+});
+```
+
+### compose($srcScope, $dstScope, name)
+
+Sets `$dstScope[name] = $srcScope` and sets up two-way data binding between the two locations. You can do this as often as you like.
+
+The two-way binding will clean up after itself if either scope is destroyed.
+
+### composeProperty($srcScope, property, $dstScope, name)
+
+Sets `$dstScope[name] = $srcScope[property]` and sets up two-way data binding between the two locations. You can do this as often as you like.
+
+The two-way binding will clean up after itself if either scope is destroyed.
+
+## $serviceScope
 
 ***Important note: $serviceScopes are just regular Scope objects with some extra tooling, so you can also call $emit, $broadcast, $on, and all the other scopy goodies.***
 
@@ -167,7 +193,11 @@ Return a promise that will be resolved when the deferred created with $defer(nam
 
 Additionally, this promise will always return the latest value for $scope[name], just in case it has later been overwritten.
 
-## Background: what problem does this solve?
+### $serviceQ
+
+This is just a drop-in replacement for Angular's $q that doesn't trigger a digest when resolved. This lets you get more fine-grained control over when your service causes digests.
+
+# Background: what problem does this solve?
 
 AngularJS provides a very elegant system for two-way data binding between
 controllers and views, but linking that back in to services in a manner that
