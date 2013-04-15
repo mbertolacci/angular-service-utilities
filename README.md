@@ -42,12 +42,12 @@ Just do this in your service:
 
 ```javascript
 angular.module('example').factory('exampleService', function($serviceScope) {
-    var $scope = $serviceScope();
+	var $scope = $serviceScope();
 
-    // Use like a normal $scope...
-    $scope.stuff = 'the stuff';
+	// Use like a normal $scope...
+	$scope.stuff = 'the stuff';
 
-    return $scope;
+	return $scope;
 });
 ```
 
@@ -60,13 +60,13 @@ The two-way binding will clean up after itself if either the service scope of th
 In a controller:
 
 ```javascript
- angular.module('example').controller('exampleController', function($scope, exampleService) {
- 	// Attach at $scope.myFavouriteService
- 	exampleService.$attach($scope, 'myFavouriteService');
+angular.module('example').controller('exampleController', function($scope, exampleService) {
+	// Attach at $scope.myFavouriteService
+	exampleService.$attach($scope, 'myFavouriteService');
 
- 	// Now anything attached to exampleService is available at $scope.
- 	// myFavouriteService, and any changes triggered either in the 
- 	// service or on $scope will propagate
+	// Now anything attached to exampleService is available at $scope.
+	// myFavouriteService, and any changes triggered either in the 
+	// service or on $scope will propagate
 });
 ```
 
@@ -74,10 +74,10 @@ In a service:
 
 ```javascript
 angular.module('example').factory('anotherExampleService', function($serviceScope, exampleService) {
- 	var $scope = $serviceScope();
+	var $scope = $serviceScope();
 
- 	// Can also attach to other serviceScopes
- 	exampleService.$attach($scope, 'myFavouriteService');
+	// Can also attach to other serviceScopes
+	exampleService.$attach($scope, 'myFavouriteService');
 });
 ```
 
@@ -88,12 +88,12 @@ Attaches the property at $serviceScope[property] to $scope[name] with two-way da
 Useful when composing services or when you don't want to export an entire service to the view:
 
 ```javascript
- angular.module('example').controller('exampleController', function($scope, exampleService) {
- 	// Attach exampleService.stuff to $scope.stuffFromService
- 	exampleService.$attachProperty('stuff', $scope, 'stuffFromService');
+angular.module('example').controller('exampleController', function($scope, exampleService) {
+	// Attach exampleService.stuff to $scope.stuffFromService
+	exampleService.$attachProperty('stuff', $scope, 'stuffFromService');
 
- 	// Now changes to $scope.stuffFromService propagate back to the
- 	// service and vice-versa
+	// Now changes to $scope.stuffFromService propagate back to the
+	// service and vice-versa
 });
 ```
 
@@ -117,19 +117,19 @@ angular.module('todo').factory('toDoList', function($serviceScope) {
 		todos: ['Write Gulliver\'s Travels', 'Eat breakfast']
 	};
 
-    $http('...').then(function(result) {
-    	// result = {
-    	//	 name: 'Jonathan Swift',
-    	//   todos: ['Write Gulliver\'s Travels', 'Eat breakfast', 'Write another essay']
-    	// }
+	$http('...').then(function(result) {
+		// result = {
+		//	 name: 'Jonathan Swift',
+		//   todos: ['Write Gulliver\'s Travels', 'Eat breakfast', 'Write another essay']
+		// }
 
-    	// $scope.user will now contain the updated values, but
-    	// it won't be an entirely new object, and neither will
-    	// $scope.user.todos
-    	$scope.$update('user', result);
-    });
+		// $scope.user will now contain the updated values, but
+		// it won't be an entirely new object, and neither will
+		// $scope.user.todos
+		$scope.$update('user', result);
+	});
 
-    return $scope;
+	return $scope;
 });
 ```
 
@@ -192,7 +192,7 @@ If you have an application that, for instance, synchronises the state of the app
 The problem is that in Angular there are only two ways to notify a service of a change:
 
  - Call $rootScope.$watch without a property name so every digest triggers a listener; this might have negative performance considerations
- - Create a function on the service that the controller should call when anything changes. But this kind of boilerplate is the reason so many of us switches to Angular from Backbone (or whatever) in the first place.
+ - Create a function on the service that the controller should call when anything changes. But this kind of boilerplate is the reason so many of us switch to Angular from Backbone (or whatever) in the first place.
 
 **With $serviceScope, the service itself can set a $watch function on one of its properties.**
 
@@ -205,18 +205,18 @@ You might try to do this:
 ```javascript
 // Service
 angular.module('example').factory('todo', function($q, $http) {
-    var toDoListDeferred = $q.defer();
+	var toDoListDeferred = $q.defer();
 
-    $http('...').then(function(result) {
-    	// Eg, ['Read a book', 'Eat dinner'];
-    	toDoListDeferred.resolve(result);
-    });
+	$http('...').then(function(result) {
+		// Eg, ['Read a book', 'Eat dinner'];
+		toDoListDeferred.resolve(result);
+	});
 
-    var service = {
-    	list: toDoListDeferred.promise
-    };
+	var service = {
+		list: toDoListDeferred.promise
+	};
 
-    return service;
+	return service;
 });
 
 // Controller
@@ -225,7 +225,7 @@ angular.module('example').controller('mainController', function($scope, todo) {
 
 	todo.list.then(function() {
 		// ... do something important ...
-		});
+	});
 });
 
 // View: the view will render the list once it updates, but the service
@@ -250,14 +250,14 @@ angular.module('example').factory('todo', function($serviceScope) {
 
 	var toDoListDeferred = $scope.$defer('list');
 
-    $http('...').then(function(result) {
-    	// Eg, ['Read a book', 'Eat dinner'];
-    	toDoListDeferred.resolve(result);
+	$http('...').then(function(result) {
+		// Eg, ['Read a book', 'Eat dinner'];
+		toDoListDeferred.resolve(result);
 
-    	// Now $scope.list contains the result
-    });
+		// Now $scope.list contains the result
+	});
 
-    return $scope;
+	return $scope;
 });
 
 // Controller
@@ -266,10 +266,10 @@ angular.module('example').controller('mainController', function($scope, todo) {
 	todo.$attachProperty('list', $scope, 'todoList');
     
 	$scope.$get('list').then(function(value) {
-   	 	// value is equal to $scope.list
+		// value is equal to $scope.list
 
 		// ... do something important ...
-		});
+	});
 });
 
 // View: the view will render the list once it updates, but the service
@@ -289,14 +289,14 @@ For example, you may have an authentication service and a service that talks to 
 ```javascript
 angular.module('todo').factory('mongoCollection', function($serviceScope) {
 	return function(collectionName) {
-    	var $scope = $serviceScope();
+		var $scope = $serviceScope();
 
-    	var valueDeferred = $scope.$defer('value');
+		var valueDeferred = $scope.$defer('value');
 
-    	// Provide two way binding between external MongoDB data store
-    	// and $scope.value
-    	//
-    	// At some stage, calls valueDeferred.resolve(...)
+		// Provide two way binding between external MongoDB data store
+		// and $scope.value
+		//
+		// At some stage, calls valueDeferred.resolve(...)
 
 		return $scope;
 	};
