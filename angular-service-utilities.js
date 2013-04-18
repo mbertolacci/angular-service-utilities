@@ -29,7 +29,7 @@ Exports
               return digestOnceOnNextTick($dstScope);
             }
           });
-          removeOurWatcher = $dstScope.$watch(function() {
+          removeOurWatcher = $srcScope.$watch(function() {
             return digestOnceOnNextTick($dstScope);
           });
           removeWatchers = function() {

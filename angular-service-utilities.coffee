@@ -20,7 +20,7 @@ angular.module('serviceUtilities', []).factory '$compose', [() ->
 					# A change occured; pass it on
 					digestOnceOnNextTick $dstScope
 
-			removeOurWatcher = $dstScope.$watch () ->
+			removeOurWatcher = $srcScope.$watch () ->
 				digestOnceOnNextTick $dstScope
 
 			removeWatchers = () ->
