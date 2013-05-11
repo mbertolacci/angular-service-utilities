@@ -24,7 +24,7 @@ It provides:
 		- [$attach($scope, name)](#attachscope-name)
 		- [$attachProperty(property, $scope, name)](#attachpropertyproperty-scope-name)
 	- [$serviceQ](#serviceq)
-- [Running the unit tests](#runningtheunittests)
+- [Running the unit tests](#running-the-unit-tests)
 - [Background: what problem does this solve?](#background-what-problem-does-this-solve)
 	- [Problem: propagating data changes without triggering all the watchers on the page](#problem-propagating-data-changes-without-triggering-all-the-watchers-on-the-page)
 	- [Problem: notifying services of data changes](#problem-notifying-services-of-data-changes)
