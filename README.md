@@ -198,7 +198,7 @@ Additionally, this promise will always return the latest value for $scope[name],
 
 This is just a drop-in replacement for Angular's $q that doesn't trigger a digest when resolved. This lets you get more fine-grained control over when your service causes digests.
 
-# Running the tests
+# Running the unit tests
 
 This module has a set of unit tests which, if you have the Node package `karma` installed you can run using
 
