@@ -6,7 +6,7 @@
     beforeEach(module(function($exceptionHandlerProvider) {
       return $exceptionHandlerProvider.mode('log');
     }));
-    return describe('$compose', function() {
+    describe('$compose', function() {
       var $compose, $exceptionHandler, $rootScope;
       $compose = null;
       $rootScope = null;
@@ -129,6 +129,81 @@
         $parentScope.child = null;
         $parentScope.$digest();
         return expect($exceptionHandler.errors.length).toBe(1);
+      });
+    });
+    return describe('$serviceScope', function() {
+      var $serviceScope;
+      $serviceScope = null;
+      beforeEach(inject(function(_$serviceScope_) {
+        return $serviceScope = _$serviceScope_;
+      }));
+      it('should correctly $update when the types are different', function() {
+        var $scope;
+        $scope = $serviceScope();
+        $scope.$update('abc', 123);
+        expect($scope.abc).toBe(123);
+        $scope.$update('abc', 'hello');
+        expect($scope.abc).toBe('hello');
+        $scope.$update('abc', {
+          a: 'b'
+        });
+        expect($scope.abc).toEqual({
+          a: 'b'
+        });
+        $scope.$update('abc', [1, 2, 3]);
+        expect($scope.abc).toEqual([1, 2, 3]);
+        $scope.$update('abc', null);
+        return expect($scope.abc).toBe(null);
+      });
+      it('should merge two objects without replacing the original one', function() {
+        var $scope, ab;
+        $scope = $serviceScope();
+        ab = {
+          a: 'b'
+        };
+        $scope.abc = ab;
+        $scope.$update('abc', {
+          a: 'c',
+          b: 'd'
+        });
+        expect($scope.abc).toEqual({
+          a: 'c',
+          b: 'd'
+        });
+        return expect($scope.abc).toBe(ab);
+      });
+      it('should merge two arrays without replacing the original one', function() {
+        var $scope, orig;
+        $scope = $serviceScope();
+        orig = [1, 2, 3];
+        $scope.abc = orig;
+        $scope.$update('abc', [4, 5, 6]);
+        expect($scope.abc).toEqual([4, 5, 6]);
+        return expect($scope.abc).toBe(orig);
+      });
+      return it('should merge deep properties of objects', function() {
+        var $scope, orig;
+        $scope = $serviceScope();
+        orig = {
+          a: {
+            b: 'c'
+          }
+        };
+        $scope.abc = orig;
+        $scope.$update('abc', {
+          a: {
+            b: 'd',
+            c: 'e'
+          }
+        });
+        expect($scope.abc).toEqual({
+          a: {
+            b: 'd',
+            c: 'e'
+          }
+        });
+        expect($scope.abc).toBe(orig);
+        return expect($scope.abc.a).toBe(orig.a);
       });
     });
   });

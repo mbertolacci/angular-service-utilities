@@ -155,7 +155,7 @@ Exports
     if (src === dst) {
       return dst;
     }
-    if (!angular.isArray(src) && !angular.isObject(src)) {
+    if ((!angular.isArray(src) && !angular.isObject(src)) || (!angular.isArray(dst) && !angular.isObject(dst))) {
       return src;
     }
     if (angular.isUndefined(dst)) {

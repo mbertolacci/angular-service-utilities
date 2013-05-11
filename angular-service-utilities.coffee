@@ -150,7 +150,7 @@ mergeObject = (src, dst) ->
 		return dst
 
 	# Some unmergeable type; send it out
-	if !angular.isArray(src) and !angular.isObject(src)
+	if (!angular.isArray(src) and !angular.isObject(src)) or (!angular.isArray(dst) and !angular.isObject(dst))
 		return src
 	if angular.isUndefined(dst)
 		return src

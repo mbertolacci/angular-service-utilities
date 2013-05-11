@@ -180,4 +180,61 @@ describe 'angular-service-utilities', () ->
 
             expect($exceptionHandler.errors.length).toBe 1
 
+    describe '$serviceScope', () ->
+        $serviceScope = null
+
+        beforeEach(inject (_$serviceScope_) ->
+            $serviceScope = _$serviceScope_
+        )
+
+        it 'should correctly $update when the types are different', () ->
+            $scope = $serviceScope()
+
+            $scope.$update 'abc', 123
+            expect($scope.abc).toBe 123
+
+            $scope.$update 'abc', 'hello'
+            expect($scope.abc).toBe 'hello'
+
+            $scope.$update 'abc', { a: 'b' }
+            expect($scope.abc).toEqual { a: 'b' }
+
+            $scope.$update 'abc', [1, 2, 3]
+            expect($scope.abc).toEqual [1, 2, 3]
+
+            $scope.$update 'abc', null
+            expect($scope.abc).toBe null
+
+        it 'should merge two objects without replacing the original one', () ->
+            $scope = $serviceScope()
+
+            ab = { a: 'b' }
+            $scope.abc = ab
+            $scope.$update 'abc', { a: 'c', b: 'd' }
+
+            # Ensure the update happened
+            expect($scope.abc).toEqual { a: 'c', b: 'd' }
+            # Ensure it's still the original object
+            expect($scope.abc).toBe ab
+
+        it 'should merge two arrays without replacing the original one', () ->
+            $scope = $serviceScope()
+
+            orig = [1, 2, 3]
+            $scope.abc = orig
+            $scope.$update 'abc', [4, 5, 6]
+
+            # Ensure the update happened
+            expect($scope.abc).toEqual [4, 5, 6]
+            # Ensure it's still the original object
+            expect($scope.abc).toBe orig
+
+        it 'should merge deep properties of objects', () ->
+            $scope = $serviceScope()
+            orig = { a: { b: 'c' }}
+            $scope.abc = orig
+            $scope.$update 'abc', { a: { b: 'd', c: 'e' }}
+            expect($scope.abc).toEqual { a: { b: 'd', c: 'e' }}
+            expect($scope.abc).toBe orig
+            expect($scope.abc.a).toBe orig.a
 
