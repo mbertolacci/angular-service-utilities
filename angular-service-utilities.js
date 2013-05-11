@@ -3,11 +3,11 @@
 /*
 Exports
 
-  compose($srcScope, $dstScope, name): 
-    Sets $dstScope[name] = $srcScope and sets up two-way data binding.
+	compose($srcScope, $dstScope, name): 
+		Sets $dstScope[name] = $srcScope and sets up two-way data binding.
 
-  composeProperty($srcScope, property, $dstScope, name):
-  	Sets $dstScope[name] = $srcScope[property] and sets up two-way data binding.
+	composeProperty($srcScope, property, $dstScope, name):
+		Sets $dstScope[name] = $srcScope[property] and sets up two-way data binding.
 */
 
 
@@ -20,44 +20,66 @@ Exports
       var exports;
       return exports = {
         compose: function($srcScope, $dstScope, name) {
-          var removeOurWatcher, removeTheirWatcher, removeWatchers;
-          removeTheirWatcher = $dstScope.$watch(name, function(newValue, oldValue) {
-            if (newValue !== oldValue) {
+          var removeOurWatcher, removeTheirWatcher, removeWatchers, removeWatchersAndBreakLink;
+          removeTheirWatcher = $dstScope.$watch(function() {
+            if ($srcScope !== $dstScope[name]) {
               throw Error('$dstScope was detached from scope');
               return removeWatchers();
             } else {
-              return digestOnceOnNextTick($dstScope);
+              if ($dstScope.$$digestSource === $srcScope.$id) {
+                return;
+              }
+              return digestOnceOnNextTick($srcScope, $dstScope.$id);
             }
           });
           removeOurWatcher = $srcScope.$watch(function() {
-            return digestOnceOnNextTick($dstScope);
+            if ($srcScope.$$digestSource === $dstScope.$id) {
+              return;
+            }
+            return digestOnceOnNextTick($dstScope, $srcScope.$id);
           });
           removeWatchers = function() {
             removeTheirWatcher();
             return removeOurWatcher();
           };
-          $srcScope.$on('$destroy', removeWatchers);
-          $dstScope.$on('$destroy', removeWatchers);
-          $dstScope[name] = $dstScope;
+          removeWatchersAndBreakLink = function() {
+            removeWatchers();
+            return $dstScope[name] = void 0;
+          };
+          $srcScope.$on('$destroy', removeWatchersAndBreakLink);
+          $dstScope.$on('$destroy', removeWatchersAndBreakLink);
+          $dstScope[name] = $srcScope;
+          digestOnceOnNextTick($dstScope, $srcScope.$id);
           return exports;
         },
         composeProperty: function($srcScope, property, $dstScope, name) {
-          var removeOurWatcher, removeTheirWatcher, removeWatchers;
-          removeTheirWatcher = $dstScope.$watch(name, function() {
+          var removeOurWatcher, removeTheirWatcher, removeWatchers, removeWatchersAndBreakLink;
+          removeTheirWatcher = $dstScope.$watch(function() {
             $srcScope[property] = mergeObject($dstScope[name], $srcScope[property]);
-            return digestOnceOnNextTick($srcScope);
+            if ($dstScope.$$digestSource === $srcScope.$id) {
+              return;
+            }
+            return digestOnceOnNextTick($srcScope, $dstScope.$id);
           });
-          removeOurWatcher = $srcScope.$watch(property, function() {
+          removeOurWatcher = $srcScope.$watch(function() {
             $dstScope[name] = mergeObject($srcScope[property], $dstScope[name]);
-            return digestOnceOnNextTick($dstScope);
+            if ($srcScope.$$digestSource === $dstScope.$id) {
+              return;
+            }
+            return digestOnceOnNextTick($dstScope, $srcScope.$id);
           });
           removeWatchers = function() {
             removeTheirWatcher();
             return removeOurWatcher();
           };
-          $srcScope.$on('$destroy', removeWatchers);
-          $dstScope.$on('$destroy', removeWatchers);
+          removeWatchersAndBreakLink = function() {
+            removeWatchers();
+            return $dstScope[name] = void 0;
+          };
+          $srcScope.$on('$destroy', removeWatchersAndBreakLink);
+          $dstScope.$on('$destroy', removeWatchersAndBreakLink);
           $dstScope[name] = $srcScope[property];
+          digestOnceOnNextTick($dstScope, $srcScope.$id);
           return exports;
         }
       };
@@ -164,13 +186,15 @@ Exports
     return dst;
   };
 
-  digestOnceOnNextTick = function($scope) {
+  digestOnceOnNextTick = function($scope, source) {
     if (!($scope.$$digestOnceOnNextTick != null)) {
-      $scope.$$digestOnceOnNextTick = debounce(function() {
-        return $scope.$digest();
+      $scope.$$digestOnceOnNextTick = debounce(function(source) {
+        $scope.$$digestSource = source;
+        $scope.$digest();
+        return $scope.$$digestSource = null;
       });
     }
-    return $scope.$$digestOnceOnNextTick();
+    return $scope.$$digestOnceOnNextTick(source);
   };
 
   /*
@@ -191,65 +215,65 @@ Exports
 
   qFactory = function(nextTick, exceptionHandler) {
     /*
-      @ngdoc
-      @name ng.$q#defer
-      @methodOf ng.$q
-      @description
-      Creates a `Deferred` object which represents a task which will finish in the future.
-      
-      @returns {Deferred} Returns a new instance of deferred.
+    	@ngdoc
+    	@name ng.$q#defer
+    	@methodOf ng.$q
+    	@description
+    	Creates a `Deferred` object which represents a task which will finish in the future.
+    	
+    	@returns {Deferred} Returns a new instance of deferred.
     */
 
     /*
-      @ngdoc
-      @name ng.$q#reject
-      @methodOf ng.$q
-      @description
-      Creates a promise that is resolved as rejected with the specified `reason`. This api should be
-      used to forward rejection in a chain of promises. If you are dealing with the last promise in
-      a promise chain, you don't need to worry about it.
-      
-      When comparing deferreds/promises to the familiar behavior of try/catch/throw, think of
-      `reject` as the `throw` keyword in JavaScript. This also means that if you "catch" an error via
-      a promise error callback and you want to forward the error to the promise derived from the
-      current promise, you have to "rethrow" the error by returning a rejection constructed via
-      `reject`.
-      
-      <pre>
-      promiseB = promiseA.then(function(result) {
-      // success: do something and resolve promiseB
-      //          with the old or a new result
-      return result;
-      }, function(reason) {
-      // error: handle the error if possible and
-      //        resolve promiseB with newPromiseOrValue,
-      //        otherwise forward the rejection to promiseB
-      if (canHandle(reason)) {
-      // handle the error and recover
-      return newPromiseOrValue;
-      }
-      return $q.reject(reason);
-      });
-      </pre>
-      
-      @param {*} reason Constant, message, exception or an object representing the rejection reason.
-      @returns {Promise} Returns a promise that was already resolved as rejected with the `reason`.
+    	@ngdoc
+    	@name ng.$q#reject
+    	@methodOf ng.$q
+    	@description
+    	Creates a promise that is resolved as rejected with the specified `reason`. This api should be
+    	used to forward rejection in a chain of promises. If you are dealing with the last promise in
+    	a promise chain, you don't need to worry about it.
+    	
+    	When comparing deferreds/promises to the familiar behavior of try/catch/throw, think of
+    	`reject` as the `throw` keyword in JavaScript. This also means that if you "catch" an error via
+    	a promise error callback and you want to forward the error to the promise derived from the
+    	current promise, you have to "rethrow" the error by returning a rejection constructed via
+    	`reject`.
+    	
+    	<pre>
+    	promiseB = promiseA.then(function(result) {
+    	// success: do something and resolve promiseB
+    	//          with the old or a new result
+    	return result;
+    	}, function(reason) {
+    	// error: handle the error if possible and
+    	//        resolve promiseB with newPromiseOrValue,
+    	//        otherwise forward the rejection to promiseB
+    	if (canHandle(reason)) {
+    	// handle the error and recover
+    	return newPromiseOrValue;
+    	}
+    	return $q.reject(reason);
+    	});
+    	</pre>
+    	
+    	@param {*} reason Constant, message, exception or an object representing the rejection reason.
+    	@returns {Promise} Returns a promise that was already resolved as rejected with the `reason`.
     */
 
     /*
-      @ngdoc
-      @name ng.$q#when
-      @methodOf ng.$q
-      @description
-      Wraps an object that might be a value or a (3rd party) then-able promise into a $q promise.
-      This is useful when you are dealing with an object that might or might not be a promise, or if
-      the promise comes from a source that can't be trusted.
-      
-      @param {*} value Value or a promise
-      @returns {Promise} Returns a single promise that will be resolved with an array of values,
-      each value corresponding to the promise at the same index in the `promises` array. If any of
-      the promises is resolved with a rejection, this resulting promise will be resolved with the
-      same rejection.
+    	@ngdoc
+    	@name ng.$q#when
+    	@methodOf ng.$q
+    	@description
+    	Wraps an object that might be a value or a (3rd party) then-able promise into a $q promise.
+    	This is useful when you are dealing with an object that might or might not be a promise, or if
+    	the promise comes from a source that can't be trusted.
+    	
+    	@param {*} value Value or a promise
+    	@returns {Promise} Returns a single promise that will be resolved with an array of values,
+    	each value corresponding to the promise at the same index in the `promises` array. If any of
+    	the promises is resolved with a rejection, this resulting promise will be resolved with the
+    	same rejection.
     */
 
     var all, defaultCallback, defaultErrback, defer, ref, reject, when_;
@@ -260,18 +284,18 @@ Exports
       return reject(reason);
     };
     /*
-      @ngdoc
-      @name ng.$q#all
-      @methodOf ng.$q
-      @description
-      Combines multiple promises into a single promise that is resolved when all of the input
-      promises are resolved.
-      
-      @param {Array.<Promise>} promises An array of promises.
-      @returns {Promise} Returns a single promise that will be resolved with an array of values,
-      each value corresponding to the promise at the same index in the `promises` array. If any of
-      the promises is resolved with a rejection, this resulting promise will be resolved with the
-      same rejection.
+    	@ngdoc
+    	@name ng.$q#all
+    	@methodOf ng.$q
+    	@description
+    	Combines multiple promises into a single promise that is resolved when all of the input
+    	promises are resolved.
+    	
+    	@param {Array.<Promise>} promises An array of promises.
+    	@returns {Promise} Returns a single promise that will be resolved with an array of values,
+    	each value corresponding to the promise at the same index in the `promises` array. If any of
+    	the promises is resolved with a rejection, this resulting promise will be resolved with the
+    	same rejection.
     */
 
     all = function(promises) {

@@ -24,6 +24,7 @@ It provides:
 		- [$attach($scope, name)](#attachscope-name)
 		- [$attachProperty(property, $scope, name)](#attachpropertyproperty-scope-name)
 	- [$serviceQ](#serviceq)
+- [Running the unit tests](#runningtheunittests)
 - [Background: what problem does this solve?](#background-what-problem-does-this-solve)
 	- [Problem: propagating data changes without triggering all the watchers on the page](#problem-propagating-data-changes-without-triggering-all-the-watchers-on-the-page)
 	- [Problem: notifying services of data changes](#problem-notifying-services-of-data-changes)
@@ -196,6 +197,12 @@ Additionally, this promise will always return the latest value for $scope[name],
 ### $serviceQ
 
 This is just a drop-in replacement for Angular's $q that doesn't trigger a digest when resolved. This lets you get more fine-grained control over when your service causes digests.
+
+# Running the tests
+
+This module has a set of unit tests which, if you have the Node package `karma` installed you can run using
+
+    coffee -c *.coffee test/*.coffee && karma run
 
 # Background: what problem does this solve?
 
