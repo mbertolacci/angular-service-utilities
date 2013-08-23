@@ -84,6 +84,22 @@ describe 'angular-service-utilities', () ->
             expect($scope1.other).toEqual $scope2
             expect($scope2.safe).toEqual $scope1.other.safe
 
+            watchSpyRoot.reset()
+            watchSpy1.reset()
+            watchSpy2.reset()
+            watchPropertySpy1.reset()
+            watchPropertySpy2.reset()
+
+            jasmine.Clock.tick(1)
+
+            expect(watchPropertySpy1).not.toHaveBeenCalled()
+            expect(watchSpy1).not.toHaveBeenCalled()
+
+            expect(watchSpy2).not.toHaveBeenCalled()
+            expect(watchPropertySpy2).not.toHaveBeenCalled()
+
+
+
         it 'should $compose.composeProperty after bidirectionally transmit digests', () ->
             $scope1 = $rootScope.$new(true)
             $scope2 = $rootScope.$new(true)
@@ -131,6 +147,17 @@ describe 'angular-service-utilities', () ->
             expect(watchSpyRoot).not.toHaveBeenCalled()
             expect(watchPropertySpy1).toHaveBeenCalled()
             expect(watchPropertySpy2).toHaveBeenCalled()
+
+            watchSpyRoot.reset()
+            watchPropertySpy1.reset()
+            watchPropertySpy2.reset()
+
+            jasmine.Clock.tick 1
+
+            expect(watchSpyRoot).not.toHaveBeenCalled()
+            expect(watchPropertySpy1).not.toHaveBeenCalled()
+            expect(watchPropertySpy2).not.toHaveBeenCalled()
+
 
         it 'should remove watchers when one of the scopes is destroyed', () ->
             $parentScope = $rootScope.$new()
