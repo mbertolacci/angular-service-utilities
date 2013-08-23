@@ -32,7 +32,7 @@ angular.module('serviceUtilities', []).factory '$compose', ['$rootScope', ($root
 				digestOnceOnNextTick $dstScope, $srcScope.$id
 
 			removeWatchers = () ->
-				removeTheirWatcher()
+				removeTheirWatcher?()
 				removeOurWatcher()
 
 			removeWatchersAndBreakLink = () ->
