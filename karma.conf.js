@@ -1,17 +1,24 @@
-files = [
-  JASMINE,
-  JASMINE_ADAPTER,
-  'test/lib/angular.js',
-  'test/lib/angular-mocks.js',
-  'angular-service-utilities.js',
-  'test/*.js'
-];
+module.exports = function(config) {
+	config.set({
+		frameworks: ['jasmine'],
 
-autoWatch = true;
+		files: [
+			'test/lib/angular.js',
+			'test/lib/angular-mocks.js',
+			'angular-service-utilities.js',
+			'test/*.js'
+		],
 
-browsers = ['PhantomJS'];
+		autoWatch: true,
 
-junitReporter = {
-  outputFile: 'test_out/unit.xml',
-  suite: 'unit'
+		browsers: ['Chrome'],
+
+
+		reporters: ['progress', 'junit'],
+
+		junitReporter: {
+			outputFile: 'test_out/unit.xml',
+			suite: 'unit'
+		}
+	});
 };
