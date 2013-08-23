@@ -57,7 +57,17 @@
         expect(watchSpy2).toHaveBeenCalled();
         expect(watchPropertySpy2).toHaveBeenCalled();
         expect($scope1.other).toEqual($scope2);
-        return expect($scope2.safe).toEqual($scope1.other.safe);
+        expect($scope2.safe).toEqual($scope1.other.safe);
+        watchSpyRoot.reset();
+        watchSpy1.reset();
+        watchSpy2.reset();
+        watchPropertySpy1.reset();
+        watchPropertySpy2.reset();
+        jasmine.Clock.tick(1);
+        expect(watchPropertySpy1).not.toHaveBeenCalled();
+        expect(watchSpy1).not.toHaveBeenCalled();
+        expect(watchSpy2).not.toHaveBeenCalled();
+        return expect(watchPropertySpy2).not.toHaveBeenCalled();
       });
       it('should $compose.composeProperty after bidirectionally transmit digests', function() {
         var $scope1, $scope2, watchPropertySpy1, watchPropertySpy2, watchSpyRoot;
@@ -93,7 +103,14 @@
         jasmine.Clock.tick(1);
         expect(watchSpyRoot).not.toHaveBeenCalled();
         expect(watchPropertySpy1).toHaveBeenCalled();
-        return expect(watchPropertySpy2).toHaveBeenCalled();
+        expect(watchPropertySpy2).toHaveBeenCalled();
+        watchSpyRoot.reset();
+        watchPropertySpy1.reset();
+        watchPropertySpy2.reset();
+        jasmine.Clock.tick(1);
+        expect(watchSpyRoot).not.toHaveBeenCalled();
+        expect(watchPropertySpy1).not.toHaveBeenCalled();
+        return expect(watchPropertySpy2).not.toHaveBeenCalled();
       });
       it('should remove watchers when one of the scopes is destroyed', function() {
         var $parentScope, $scope, watchParentSpy, watchSpy;
@@ -114,7 +131,7 @@
         expect(watchSpy).not.toHaveBeenCalled();
         return expect(watchParentSpy).not.toHaveBeenCalled();
       });
-      return it('should fire an error when a composed scope is totally overwritten', function() {
+      it('should fire an error when a composed scope is totally overwritten', function() {
         var $parentScope, $scope, watchParentSpy, watchSpy;
         $parentScope = $rootScope.$new();
         $scope = $rootScope.$new();
@@ -129,6 +146,66 @@
         $parentScope.child = null;
         $parentScope.$digest();
         return expect($exceptionHandler.errors.length).toBe(1);
+      });
+      it('should not trigger a cycle when a scope is attached to the root scope', function() {
+        var $scope, watchPropertySpy, watchRootPropertySpy, watchRootSpy, watchSpy;
+        $scope = $rootScope.$new();
+        $scope.meal = {
+          pizza: 'for lunch'
+        };
+        watchSpy = jasmine.createSpy('watchSpy');
+        watchRootSpy = jasmine.createSpy('watchRootSpy');
+        $scope.$watch(watchSpy);
+        $rootScope.$watch(watchRootSpy);
+        jasmine.Clock.tick(1);
+        watchSpy.reset();
+        watchRootSpy.reset();
+        $compose.compose($scope, $rootScope, 'meal');
+        jasmine.Clock.tick(5);
+        expect(watchSpy.calls.length).toBe(2);
+        expect(watchRootSpy.calls.length).toBe(2);
+        watchPropertySpy = jasmine.createSpy('watchPropertySpy');
+        watchRootPropertySpy = jasmine.createSpy('watchRootPropertySpy');
+        $scope.$watch('meal.pizza', watchPropertySpy);
+        $rootScope.$watch('meal.pizza', watchRootPropertySpy);
+        jasmine.Clock.tick(1);
+        watchPropertySpy.reset();
+        watchRootPropertySpy.reset();
+        $scope.meal.pizza = 'for dinner';
+        $scope.$digest();
+        jasmine.Clock.tick(5);
+        expect(watchPropertySpy).toHaveBeenCalled();
+        return expect(watchRootPropertySpy).toHaveBeenCalled();
+      });
+      return it('should not trigger a cycle when a property is attached to the root scope', function() {
+        var $scope, watchPropertySpy, watchRootPropertySpy, watchRootSpy, watchSpy;
+        $scope = $rootScope.$new();
+        $scope.user = {
+          name: 'John Smith'
+        };
+        watchSpy = jasmine.createSpy('watchSpy');
+        watchRootSpy = jasmine.createSpy('watchRootSpy');
+        $scope.$watch(watchSpy);
+        $rootScope.$watch(watchRootSpy);
+        jasmine.Clock.tick(1);
+        watchSpy.reset();
+        watchRootSpy.reset();
+        $compose.composeProperty($scope, 'user', $rootScope, 'user');
+        jasmine.Clock.tick(5);
+        expect(watchSpy.calls.length).toBe(2);
+        expect(watchRootSpy.calls.length).toBe(2);
+        watchPropertySpy = jasmine.createSpy('watchPropertySpy');
+        watchRootPropertySpy = jasmine.createSpy('watchRootPropertySpy');
+        $scope.$watch('user.name', watchPropertySpy);
+        $rootScope.$watch('user.name', watchRootPropertySpy);
+        jasmine.Clock.tick(1);
+        watchPropertySpy.reset();
+        watchRootPropertySpy.reset();
+        $scope.user.name = 'Jane Smith';
+        $scope.$digest();
+        jasmine.Clock.tick(5);
+        expect(watchPropertySpy).toHaveBeenCalled();
+        return expect(watchRootPropertySpy).toHaveBeenCalled();
       });
     });
     return describe('$serviceScope', function() {
@@ -181,7 +258,7 @@
         expect($scope.abc).toEqual([4, 5, 6]);
         return expect($scope.abc).toBe(orig);
       });
-      return it('should merge deep properties of objects', function() {
+      it('should merge deep properties of objects', function() {
         var $scope, orig;
         $scope = $serviceScope();
         orig = {
@@ -204,6 +281,21 @@
         });
         expect($scope.abc).toBe(orig);
         return expect($scope.abc.a).toBe(orig.a);
+      });
+      return it('should ignore properties starting with $', function() {
+        var $scope;
+        $scope = $serviceScope();
+        $scope.abc = {
+          $private: 'a',
+          b: 'c'
+        };
+        $scope.$update('abc', {
+          b: 'd'
+        });
+        return expect($scope.abc).toEqual({
+          $private: 'a',
+          b: 'd'
+        });
       });
     });
   });

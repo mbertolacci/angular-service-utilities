@@ -16,24 +16,26 @@ Exports
     __slice = [].slice;
 
   angular.module('serviceUtilities', []).factory('$compose', [
-    function() {
+    '$rootScope', function($rootScope) {
       var exports;
       return exports = {
         compose: function($srcScope, $dstScope, name) {
           var removeOurWatcher, removeTheirWatcher, removeWatchers, removeWatchersAndBreakLink;
-          removeTheirWatcher = $dstScope.$watch(function() {
-            if ($srcScope !== $dstScope[name]) {
-              throw Error('$dstScope was detached from scope');
-              return removeWatchers();
-            } else {
-              if ($dstScope.$$digestSource === $srcScope.$id) {
-                return;
+          if ($dstScope.$id !== $rootScope.$id) {
+            removeTheirWatcher = $dstScope.$watch(function() {
+              if ($srcScope !== $dstScope[name]) {
+                throw Error('$dstScope was detached from scope');
+                return removeWatchers();
+              } else {
+                if ($dstScope.$$digestSource === $srcScope.$id) {
+                  return;
+                }
+                return digestOnceOnNextTick($srcScope, $dstScope.$id);
               }
-              return digestOnceOnNextTick($srcScope, $dstScope.$id);
-            }
-          });
+            });
+          }
           removeOurWatcher = $srcScope.$watch(function() {
-            if ($srcScope.$$digestSource === $dstScope.$id) {
+            if ($srcScope.$$digestSource === $dstScope.$id || $srcScope.$$digestSource === $srcScope.$id) {
               return;
             }
             return digestOnceOnNextTick($dstScope, $srcScope.$id);
@@ -54,22 +56,26 @@ Exports
         },
         composeProperty: function($srcScope, property, $dstScope, name) {
           var removeOurWatcher, removeTheirWatcher, removeWatchers, removeWatchersAndBreakLink;
-          removeTheirWatcher = $dstScope.$watch(function() {
-            $srcScope[property] = mergeObject($dstScope[name], $srcScope[property]);
-            if ($dstScope.$$digestSource === $srcScope.$id) {
-              return;
-            }
-            return digestOnceOnNextTick($srcScope, $dstScope.$id);
-          });
+          if ($dstScope.$id !== $rootScope.$id) {
+            removeTheirWatcher = $dstScope.$watch(function() {
+              $srcScope[property] = mergeObject($dstScope[name], $srcScope[property]);
+              if ($dstScope.$$digestSource === $srcScope.$id) {
+                return;
+              }
+              return digestOnceOnNextTick($srcScope, $dstScope.$id);
+            });
+          }
           removeOurWatcher = $srcScope.$watch(function() {
             $dstScope[name] = mergeObject($srcScope[property], $dstScope[name]);
-            if ($srcScope.$$digestSource === $dstScope.$id) {
+            if ($srcScope.$$digestSource === $dstScope.$id || $srcScope.$$digestSource === $srcScope.$id) {
               return;
             }
             return digestOnceOnNextTick($dstScope, $srcScope.$id);
           });
           removeWatchers = function() {
-            removeTheirWatcher();
+            if (typeof removeTheirWatcher === "function") {
+              removeTheirWatcher();
+            }
             return removeOurWatcher();
           };
           removeWatchersAndBreakLink = function() {
@@ -165,11 +171,7 @@ Exports
       if ((typeof key.charAt === "function" ? key.charAt(0) : void 0) === '$') {
         return;
       }
-      if ((angular.isObject(value) && angular.isObject(dst[key])) || (angular.isArray(value) && angular.isArray(dst[key]))) {
-        return mergeObject(value, dst[key]);
-      } else if (dst[key] !== value) {
-        return dst[key] = value;
-      }
+      return dst[key] = mergeObject(value, dst[key]);
     });
     if (angular.isArray(dst) && angular.isArray(src)) {
       dst.length = src.length;

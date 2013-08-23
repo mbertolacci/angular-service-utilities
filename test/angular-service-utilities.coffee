@@ -207,6 +207,96 @@ describe 'angular-service-utilities', () ->
 
             expect($exceptionHandler.errors.length).toBe 1
 
+
+        it 'should not trigger a cycle when a scope is attached to the root scope', () ->
+            $scope = $rootScope.$new()
+
+            $scope.meal = {
+                pizza: 'for lunch'
+            }
+
+            watchSpy = jasmine.createSpy 'watchSpy'
+            watchRootSpy = jasmine.createSpy 'watchRootSpy'
+
+            $scope.$watch watchSpy
+            $rootScope.$watch watchRootSpy
+
+            jasmine.Clock.tick 1
+            watchSpy.reset()
+            watchRootSpy.reset()
+
+            $compose.compose $scope, $rootScope, 'meal'
+
+            jasmine.Clock.tick 5
+
+            # Called twice due to digest cycle forwarding, but
+            # should not call more often
+            expect(watchSpy.calls.length).toBe 2
+            expect(watchRootSpy.calls.length).toBe 2
+
+            watchPropertySpy = jasmine.createSpy 'watchPropertySpy'
+            watchRootPropertySpy = jasmine.createSpy 'watchRootPropertySpy'
+
+            $scope.$watch 'meal.pizza', watchPropertySpy
+            $rootScope.$watch 'meal.pizza', watchRootPropertySpy
+
+            jasmine.Clock.tick 1
+            watchPropertySpy.reset()
+            watchRootPropertySpy.reset()
+
+            $scope.meal.pizza = 'for dinner'
+            $scope.$digest()
+            jasmine.Clock.tick 5
+
+            # Changes should still propagate despite cycle avoidance
+            expect(watchPropertySpy).toHaveBeenCalled()
+            expect(watchRootPropertySpy).toHaveBeenCalled()
+
+        it 'should not trigger a cycle when a property is attached to the root scope', () ->
+            $scope = $rootScope.$new()
+
+            $scope.user = {
+                name: 'John Smith'
+            }
+
+            watchSpy = jasmine.createSpy 'watchSpy'
+            watchRootSpy = jasmine.createSpy 'watchRootSpy'
+
+            $scope.$watch watchSpy
+            $rootScope.$watch watchRootSpy
+
+            jasmine.Clock.tick 1
+            watchSpy.reset()
+            watchRootSpy.reset()
+
+            $compose.composeProperty $scope, 'user', $rootScope, 'user'
+
+            jasmine.Clock.tick 5
+
+            # Called twice due to digest cycle forwarding, but
+            # should not call more often
+            expect(watchSpy.calls.length).toBe 2
+            expect(watchRootSpy.calls.length).toBe 2
+
+            watchPropertySpy = jasmine.createSpy 'watchPropertySpy'
+            watchRootPropertySpy = jasmine.createSpy 'watchRootPropertySpy'
+
+            $scope.$watch 'user.name', watchPropertySpy
+            $rootScope.$watch 'user.name', watchRootPropertySpy
+
+            jasmine.Clock.tick 1
+            watchPropertySpy.reset()
+            watchRootPropertySpy.reset()
+
+            $scope.user.name = 'Jane Smith'
+
+            $scope.$digest()
+            jasmine.Clock.tick 5
+
+            # Changes should still propagate despite cycle avoidance
+            expect(watchPropertySpy).toHaveBeenCalled()
+            expect(watchRootPropertySpy).toHaveBeenCalled()
+
     describe '$serviceScope', () ->
         $serviceScope = null
 
@@ -265,3 +355,11 @@ describe 'angular-service-utilities', () ->
             expect($scope.abc).toBe orig
             expect($scope.abc.a).toBe orig.a
 
+        it 'should ignore properties starting with $', () ->
+            $scope = $serviceScope()
+            $scope.abc = { $private: 'a', b: 'c' }
+            $scope.$update 'abc', { b: 'd' }
+            expect($scope.abc).toEqual { $private: 'a', b: 'd' }
+
+        # Changed length of array
+        # Adding and removing elements from both dst and src

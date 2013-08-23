@@ -8,22 +8,26 @@ Exports
 	composeProperty($srcScope, property, $dstScope, name):
 		Sets $dstScope[name] = $srcScope[property] and sets up two-way data binding.
 ###
-angular.module('serviceUtilities', []).factory '$compose', [() ->
+angular.module('serviceUtilities', []).factory '$compose', ['$rootScope', ($rootScope) ->
 	exports =
 		compose: ($srcScope, $dstScope, name) ->
-			removeTheirWatcher = $dstScope.$watch () ->
-				if $srcScope != $dstScope[name]
-					# The user has destroyed the reference!
-					throw Error('$dstScope was detached from scope')
-					removeWatchers()
-				else
-					# A change occured; pass it on
-					if $dstScope.$$digestSource == $srcScope.$id
-						return
-					digestOnceOnNextTick $srcScope, $dstScope.$id
+			# If rootScope is the destination scope, any digests will automatically
+			# trigger on srcScope
+			if $dstScope.$id != $rootScope.$id
+				removeTheirWatcher = $dstScope.$watch () ->
+					if $srcScope != $dstScope[name]
+						# The user has destroyed the reference!
+						throw Error('$dstScope was detached from scope')
+						removeWatchers()
+					else
+						# A change occured; pass it on
+						if $dstScope.$$digestSource == $srcScope.$id
+							return
+						digestOnceOnNextTick $srcScope, $dstScope.$id
 
 			removeOurWatcher = $srcScope.$watch () ->
-				if $srcScope.$$digestSource == $dstScope.$id
+				if $srcScope.$$digestSource == $dstScope.$id ||
+				   $srcScope.$$digestSource == $srcScope.$id   # Handles the case where dstScope == rootScope
 					return
 				digestOnceOnNextTick $dstScope, $srcScope.$id
 
@@ -46,20 +50,24 @@ angular.module('serviceUtilities', []).factory '$compose', [() ->
 			return exports
 
 		composeProperty: ($srcScope, property, $dstScope, name) ->
-			removeTheirWatcher = $dstScope.$watch () ->
-				$srcScope[property] = mergeObject $dstScope[name], $srcScope[property]
-				if $dstScope.$$digestSource == $srcScope.$id
-					return
-				digestOnceOnNextTick $srcScope, $dstScope.$id
+			# If rootScope is the destination scope, any digests will automatically
+			# trigger on srcScope
+			if $dstScope.$id != $rootScope.$id
+				removeTheirWatcher = $dstScope.$watch () ->
+					$srcScope[property] = mergeObject $dstScope[name], $srcScope[property]
+					if $dstScope.$$digestSource == $srcScope.$id
+						return
+					digestOnceOnNextTick $srcScope, $dstScope.$id
 
 			removeOurWatcher = $srcScope.$watch () ->
 				$dstScope[name] = mergeObject $srcScope[property], $dstScope[name]
-				if $srcScope.$$digestSource == $dstScope.$id
+				if $srcScope.$$digestSource == $dstScope.$id ||
+				    $srcScope.$$digestSource == $srcScope.$id  # Handles the case where dstScope == rootScope
 					return
 				digestOnceOnNextTick $dstScope, $srcScope.$id
 
 			removeWatchers = () ->
-				removeTheirWatcher()
+				removeTheirWatcher?()
 				removeOurWatcher()
 
 			removeWatchersAndBreakLink = () ->
@@ -159,10 +167,7 @@ mergeObject = (src, dst) ->
 	angular.forEach src, (value, key) ->
 		if key.charAt?(0) == '$'
 			return
-		if (angular.isObject(value) && angular.isObject(dst[key])) or (angular.isArray(value) && angular.isArray(dst[key]))
-			mergeObject value, dst[key]
-		else if dst[key] != value
-			dst[key] = value
+		dst[key] = mergeObject value, dst[key]
 
 	if angular.isArray(dst) && angular.isArray(src)
 		# Resize the destination array to match the source
