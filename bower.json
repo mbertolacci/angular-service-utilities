@@ -1,0 +1,20 @@
+{
+  "name": "angular-service-utilities",
+  "main": "angular-service-utilities.js",
+  "version": "0.0.0",
+  "homepage": "https://github.com/mbertolacci/angular-service-utilities",
+  "authors": [
+    "Michael Bertolacci"
+  ],
+  "description": "AngularJS utilities for bringing two-way data binding into services, plus some other goodies.",
+  "keywords": [
+    "angular"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "test",
+    "karma.conf.js"
+  ]
+}
