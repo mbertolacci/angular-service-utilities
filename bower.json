@@ -1,7 +1,7 @@
 {
   "name": "angular-service-utilities",
   "main": "angular-service-utilities.js",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "homepage": "https://github.com/mbertolacci/angular-service-utilities",
   "authors": [
     "Michael Bertolacci"
